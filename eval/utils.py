@@ -29,10 +29,12 @@ class KeyWordsCriteria(StoppingCriteria):
 @torch.no_grad()
 def generate_completions(model, tokenizer, prompts, batch_size=1, stop_id_sequences=None, add_special_tokens=True, disable_tqdm=False, **generation_kwargs):
     generations = []
+    generation_time = []
     if not disable_tqdm:
         progress = tqdm.tqdm(total=len(prompts), desc="Generating Completions")
 
     num_return_sequences = generation_kwargs.get("num_return_sequences", 1)
+    start_time = time.time()
     for i in range(0, len(prompts), batch_size):
         batch_prompts = prompts[i:i+batch_size]
         tokenized_prompts = tokenizer(batch_prompts, padding="longest", return_tensors="pt", add_special_tokens=add_special_tokens)
@@ -89,9 +91,10 @@ def generate_completions(model, tokenizer, prompts, batch_size=1, stop_id_sequen
 
         if not disable_tqdm:
             progress.update(len(batch_prompts)//num_return_sequences)
-
+        end_time = time.time()
+        generation_time.append(end_time-start_time)
     assert len(generations) == len(prompts) * num_return_sequences, "number of generations should be equal to number of prompts * num_return_sequences"
-    return generations
+    return generation_time, generations
 
 
 @torch.no_grad()
